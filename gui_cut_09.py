@@ -421,6 +421,55 @@ def save_current_column_widths():
     save_config(config)
     messagebox.showinfo("Gespeichert", "Spaltenbreiten wurden gespeichert.")
 
+import csv
+
+def export_database():
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV Dateien", "*.csv"), ("Alle Dateien", "*.*")],
+        title="Datenbank exportieren"
+    )
+    if not file_path:
+        return
+
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    # alle Daten aus jobs lesen
+    c.execute("SELECT * FROM jobs")
+    rows = c.fetchall()
+    column_names = [desc[0] for desc in c.description]
+
+    conn.close()
+
+    # in CSV schreiben
+    with open(file_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(column_names)
+        writer.writerows(rows)
+
+    messagebox.showinfo("Export abgeschlossen", f"Datenbank wurde exportiert nach:\n{file_path}")
+
+
+
+def export_database_sql():
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".sql",
+        filetypes=[("SQL Dateien", "*.sql"), ("Alle Dateien", "*.*")],
+        title="Gesamte Datenbank exportieren"
+    )
+    if not file_path:
+        return
+
+    conn = sqlite3.connect(DB_FILE)
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        for line in conn.iterdump():
+            f.write(f"{line}\n")
+
+    conn.close()
+    messagebox.showinfo("Export abgeschlossen", f"Gesamte Datenbank wurde exportiert nach:\n{file_path}")
+
 
 
 # --- GUI Setup ---
@@ -500,6 +549,8 @@ tk.Button(root, text="Ausgewählten Job aktualisieren", command=update_selected_
 tk.Button(root, text="Ausgewählten Job löschen", command=delete_selected_job, bg="salmon").grid(row=14, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Gefilterte Daten als Markdown exportieren", command=export_markdown, bg="lightgrey").grid(row=15, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Spaltenbreiten speichern", command=save_current_column_widths).grid(row=16, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Datenbank exportieren (CSV)", command=export_database, bg="lightgrey").grid(row=17, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Gesamte Datenbank als SQL exportieren", command=export_database_sql, bg="lightgrey").grid(row=18, column=0, columnspan=3, pady=5)
 
 # Lade Gruppen und Historie
 load_groups()
