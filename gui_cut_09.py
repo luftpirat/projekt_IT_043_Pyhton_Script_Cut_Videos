@@ -6,8 +6,48 @@ import os
 import sqlite3
 from datetime import datetime
 import threading
+import json
 
+# Datenbank in der die Jobs gespeichert werden. 
 DB_FILE = "ffmpeg_jobs5.db"
+
+
+
+
+CONFIG_FILE = "config.json"
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    else:
+        # Default-Werte falls keine Config existiert
+        return {
+            "column_widths": {
+                "ID": 50,
+                "Eingabe-Datei": 200,
+                "Eingabe-Verzeichnis": 250,
+                "Ausgabe-Datei": 200,
+                "Start": 80,
+                "Ende": 80,
+                "Beschreibung": 250,
+                "Gruppe": 120,
+                "Untergruppe": 120,
+                "Erstellt_am": 150
+            }
+        }
+
+def save_config(config):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=4, ensure_ascii=False)
+
+
+
+
+
+
+
+
 
 # --- Datenbankfunktionen ---
 def init_db():
@@ -372,8 +412,14 @@ def export_markdown():
 
     messagebox.showinfo("Export abgeschlossen", f"Markdown-Datei gespeichert:\n{file_path}")
 
+# Spalten Breiten speichern
 
-
+def save_current_column_widths():
+    config = load_config()
+    for col in columns:
+        config["column_widths"][col] = tree.column(col)["width"]
+    save_config(config)
+    messagebox.showinfo("Gespeichert", "Spaltenbreiten wurden gespeichert.")
 
 
 
@@ -434,9 +480,13 @@ tk.Button(root, text="Filter anwenden", command=apply_filter).grid(row=10, colum
 # Treeview
 columns = ("ID", "Eingabe-Datei", "Eingabe-Verzeichnis", "Ausgabe-Datei", "Start", "Ende", "Beschreibung", "Gruppe", "Untergruppe", "Erstellt_am")
 tree = ttk.Treeview(root, columns=columns, show="headings", height=10)
+config = load_config()
+column_widths = config.get("column_widths", {})
+
 for col in columns:
     tree.heading(col, text=col)
-    tree.column(col, width=140, anchor="w")
+    width = column_widths.get(col, 140)  # Fallback
+    tree.column(col, width=width, anchor="w")
 tree.grid(row=11, column=0, columnspan=3, padx=5, pady=10, sticky="nsew")
 
 scrollbar = ttk.Scrollbar(root, orient="vertical", command=tree.yview)
@@ -449,6 +499,7 @@ tk.Button(root, text="Ausgewählten Job erneut ausführen", command=rerun_select
 tk.Button(root, text="Ausgewählten Job aktualisieren", command=update_selected_job, bg="khaki").grid(row=13, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Ausgewählten Job löschen", command=delete_selected_job, bg="salmon").grid(row=14, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Gefilterte Daten als Markdown exportieren", command=export_markdown, bg="lightgrey").grid(row=15, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Spaltenbreiten speichern", command=save_current_column_widths).grid(row=16, column=0, columnspan=3, pady=5)
 
 # Lade Gruppen und Historie
 load_groups()
