@@ -430,18 +430,18 @@ root.title("FFmpeg Video Cutter mit SQLite + Gruppen/Untergruppen + Filter")
 
 # Eingabefelder
 tk.Label(root, text="Eingabeverzeichnis:").grid(row=0, column=0, sticky="w")
-entry_input_dir = tk.Entry(root, width=40)
+entry_input_dir = tk.Entry(root, width=100)
 entry_input_dir.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 tk.Button(root, text="Verzeichnis wählen", command=browse_input_dir).grid(row=0, column=2, padx=5)
 
 tk.Label(root, text="Eingabedatei:").grid(row=1, column=0, sticky="w")
-entry_input_file = tk.Entry(root, width=40)
+entry_input_file = tk.Entry(root, width=100)
 entry_input_file.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 tk.Button(root, text="Datei wählen", command=browse_input_file).grid(row=1, column=2, padx=5)
 
 tk.Label(root, text="Ausgabedatei (nur Name):").grid(row=2, column=0, sticky="w")
-entry_output = tk.Entry(root, width=50)
-entry_output.grid(row=2, column=1, padx=5, pady=5)
+entry_output = tk.Entry(root, width=100)
+entry_output.grid(row=2, column=1, padx=5, pady=5,  sticky="w")
 
 tk.Label(root, text="Startzeit (HH:MM:SS):").grid(row=3, column=0, sticky="w")
 entry_start = tk.Entry(root, width=20)
@@ -478,7 +478,7 @@ entry_filter.bind("<KeyRelease>", apply_filter)
 tk.Button(root, text="Filter anwenden", command=apply_filter).grid(row=10, column=2, padx=5)
 
 # Treeview
-columns = ("ID", "Eingabe-Datei", "Eingabe-Verzeichnis", "Ausgabe-Datei", "Start", "Ende", "Beschreibung", "Gruppe", "Untergruppe", "Erstellt_am")
+columns = ("ID", "Eingabe-Datei", "Eingabe-Verzeichnis", "Ausgabe-Datei", "Start", "Ende", "Beschreibung", "Gruppe", "Untergruppe")
 tree = ttk.Treeview(root, columns=columns, show="headings", height=10)
 config = load_config()
 column_widths = config.get("column_widths", {})
