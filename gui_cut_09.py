@@ -6,8 +6,48 @@ import os
 import sqlite3
 from datetime import datetime
 import threading
+import json
 
+# Datenbank in der die Jobs gespeichert werden. 
 DB_FILE = "ffmpeg_jobs5.db"
+
+
+
+
+CONFIG_FILE = "config.json"
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    else:
+        # Default-Werte falls keine Config existiert
+        return {
+            "column_widths": {
+                "ID": 50,
+                "Eingabe-Datei": 200,
+                "Eingabe-Verzeichnis": 250,
+                "Ausgabe-Datei": 200,
+                "Start": 80,
+                "Ende": 80,
+                "Beschreibung": 250,
+                "Gruppe": 120,
+                "Untergruppe": 120,
+                "Erstellt_am": 150
+            }
+        }
+
+def save_config(config):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=4, ensure_ascii=False)
+
+
+
+
+
+
+
+
 
 # --- Datenbankfunktionen ---
 def init_db():
@@ -372,8 +412,63 @@ def export_markdown():
 
     messagebox.showinfo("Export abgeschlossen", f"Markdown-Datei gespeichert:\n{file_path}")
 
+# Spalten Breiten speichern
+
+def save_current_column_widths():
+    config = load_config()
+    for col in columns:
+        config["column_widths"][col] = tree.column(col)["width"]
+    save_config(config)
+    messagebox.showinfo("Gespeichert", "Spaltenbreiten wurden gespeichert.")
+
+import csv
+
+def export_database():
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV Dateien", "*.csv"), ("Alle Dateien", "*.*")],
+        title="Datenbank exportieren"
+    )
+    if not file_path:
+        return
+
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    # alle Daten aus jobs lesen
+    c.execute("SELECT * FROM jobs")
+    rows = c.fetchall()
+    column_names = [desc[0] for desc in c.description]
+
+    conn.close()
+
+    # in CSV schreiben
+    with open(file_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter=";")
+        writer.writerow(column_names)
+        writer.writerows(rows)
+
+    messagebox.showinfo("Export abgeschlossen", f"Datenbank wurde exportiert nach:\n{file_path}")
 
 
+
+def export_database_sql():
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".sql",
+        filetypes=[("SQL Dateien", "*.sql"), ("Alle Dateien", "*.*")],
+        title="Gesamte Datenbank exportieren"
+    )
+    if not file_path:
+        return
+
+    conn = sqlite3.connect(DB_FILE)
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        for line in conn.iterdump():
+            f.write(f"{line}\n")
+
+    conn.close()
+    messagebox.showinfo("Export abgeschlossen", f"Gesamte Datenbank wurde exportiert nach:\n{file_path}")
 
 
 
@@ -384,18 +479,18 @@ root.title("FFmpeg Video Cutter mit SQLite + Gruppen/Untergruppen + Filter")
 
 # Eingabefelder
 tk.Label(root, text="Eingabeverzeichnis:").grid(row=0, column=0, sticky="w")
-entry_input_dir = tk.Entry(root, width=40)
+entry_input_dir = tk.Entry(root, width=100)
 entry_input_dir.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 tk.Button(root, text="Verzeichnis wählen", command=browse_input_dir).grid(row=0, column=2, padx=5)
 
 tk.Label(root, text="Eingabedatei:").grid(row=1, column=0, sticky="w")
-entry_input_file = tk.Entry(root, width=40)
+entry_input_file = tk.Entry(root, width=100)
 entry_input_file.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 tk.Button(root, text="Datei wählen", command=browse_input_file).grid(row=1, column=2, padx=5)
 
 tk.Label(root, text="Ausgabedatei (nur Name):").grid(row=2, column=0, sticky="w")
-entry_output = tk.Entry(root, width=50)
-entry_output.grid(row=2, column=1, padx=5, pady=5)
+entry_output = tk.Entry(root, width=100)
+entry_output.grid(row=2, column=1, padx=5, pady=5,  sticky="w")
 
 tk.Label(root, text="Startzeit (HH:MM:SS):").grid(row=3, column=0, sticky="w")
 entry_start = tk.Entry(root, width=20)
@@ -432,11 +527,15 @@ entry_filter.bind("<KeyRelease>", apply_filter)
 tk.Button(root, text="Filter anwenden", command=apply_filter).grid(row=10, column=2, padx=5)
 
 # Treeview
-columns = ("ID", "Eingabe-Datei", "Eingabe-Verzeichnis", "Ausgabe-Datei", "Start", "Ende", "Beschreibung", "Gruppe", "Untergruppe", "Erstellt_am")
+columns = ("ID", "Eingabe-Datei", "Eingabe-Verzeichnis", "Ausgabe-Datei", "Start", "Ende", "Beschreibung", "Gruppe", "Untergruppe")
 tree = ttk.Treeview(root, columns=columns, show="headings", height=10)
+config = load_config()
+column_widths = config.get("column_widths", {})
+
 for col in columns:
     tree.heading(col, text=col)
-    tree.column(col, width=140, anchor="w")
+    width = column_widths.get(col, 140)  # Fallback
+    tree.column(col, width=width, anchor="w")
 tree.grid(row=11, column=0, columnspan=3, padx=5, pady=10, sticky="nsew")
 
 scrollbar = ttk.Scrollbar(root, orient="vertical", command=tree.yview)
@@ -449,6 +548,9 @@ tk.Button(root, text="Ausgewählten Job erneut ausführen", command=rerun_select
 tk.Button(root, text="Ausgewählten Job aktualisieren", command=update_selected_job, bg="khaki").grid(row=13, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Ausgewählten Job löschen", command=delete_selected_job, bg="salmon").grid(row=14, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Gefilterte Daten als Markdown exportieren", command=export_markdown, bg="lightgrey").grid(row=15, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Spaltenbreiten speichern", command=save_current_column_widths).grid(row=16, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Datenbank exportieren (CSV)", command=export_database, bg="lightgrey").grid(row=17, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Gesamte Datenbank als SQL exportieren", command=export_database_sql, bg="lightgrey").grid(row=18, column=0, columnspan=3, pady=5)
 
 # Lade Gruppen und Historie
 load_groups()
