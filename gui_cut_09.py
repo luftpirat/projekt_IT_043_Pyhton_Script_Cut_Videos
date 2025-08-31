@@ -472,6 +472,41 @@ def export_database_sql():
 
 
 
+# Export seleked Data
+
+def export_selected_to_markdown():
+    selected_items = tree.selection()
+    if not selected_items:
+        messagebox.showwarning("Keine Auswahl", "Bitte wählen Sie mindestens einen Eintrag in der Tabelle aus.")
+        return
+
+    filepath = filedialog.asksaveasfilename(
+        defaultextension=".md",
+        filetypes=[("Markdown Dateien", "*.md"), ("Alle Dateien", "*.*")]
+    )
+    if not filepath:
+        return
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        for item in selected_items:
+            values = tree.item(item, "values")
+
+            # Werte extrahieren (anpassen an deine Spaltenreihenfolge!)
+            eingabe_datei = values[1]
+            ausgabe_datei = values[3]
+            beschreibung = values[6]
+            step = values[7] if len(values) > 7 else ""
+
+            f.write(f"## {beschreibung}\n\n")
+            if step.strip():
+                f.write(f"**Step:** {step}\n\n")
+            f.write(f"**Eingabe:** `{eingabe_datei}`  \n")
+            f.write(f"**Ausgabe:** `{ausgabe_datei}`\n\n")
+            f.write("---\n\n")
+
+    messagebox.showinfo("Export abgeschlossen", f"Die ausgewählten Einträge wurden nach Markdown exportiert:\n{filepath}")
+
+
 # --- GUI Setup ---
 init_db()
 root = tk.Tk()
@@ -551,6 +586,7 @@ tk.Button(root, text="Gefilterte Daten als Markdown exportieren", command=export
 tk.Button(root, text="Spaltenbreiten speichern", command=save_current_column_widths).grid(row=16, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Datenbank exportieren (CSV)", command=export_database, bg="lightgrey").grid(row=17, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Gesamte Datenbank als SQL exportieren", command=export_database_sql, bg="lightgrey").grid(row=18, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Selektierte exportieren (Markdown)", command=export_selected_to_markdown).grid(row=19, column=0, columnspan=3, pady=5)
 
 # Lade Gruppen und Historie
 load_groups()
