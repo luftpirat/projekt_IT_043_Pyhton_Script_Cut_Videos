@@ -507,6 +507,37 @@ def export_selected_to_markdown():
     messagebox.showinfo("Export abgeschlossen", f"Die ausgewählten Einträge wurden nach Markdown exportiert:\n{filepath}")
 
 
+def apply_sql_filter(filter_text):
+    print("Apply Filter")
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+
+    base_query = "SELECT id, eingabe_datei, eingabe_verzeichnis, ausgabe_datei, startzeit, endzeit, beschreibung, step, gruppe, untergruppe, erstellt_am FROM jobs"
+    
+    if filter_text.strip():
+        query = f"{base_query} WHERE {filter_text}"
+    else:
+        query = base_query
+
+    try:
+        print(query)
+        c.execute(query)
+        rows = c.fetchall()
+
+        # Tabelle leeren
+        for row in tree.get_children():
+            tree.delete(row)
+
+        # Neue Daten einfügen
+        for row in rows:
+            tree.insert("", "end", values=row)
+
+        conn.close()
+    except sqlite3.Error as e:
+        messagebox.showerror("SQL-Fehler", f"Fehler in der SQL-Abfrage:\n{e}")
+
+
+
 # --- GUI Setup ---
 init_db()
 root = tk.Tk()
@@ -579,9 +610,19 @@ scrollbar.grid(row=11, column=3, sticky="ns")
 tree.bind("<Double-1>", load_selected_job)
 
 # Action Buttons
-tk.Button(root, text="Ausgewählten Job erneut ausführen", command=rerun_selected_job, bg="lightblue").grid(row=12, column=0, columnspan=3, pady=5)
-tk.Button(root, text="Ausgewählten Job aktualisieren", command=update_selected_job, bg="khaki").grid(row=13, column=0, columnspan=3, pady=5)
-tk.Button(root, text="Ausgewählten Job löschen", command=delete_selected_job, bg="salmon").grid(row=14, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Job erneut ausführen", command=rerun_selected_job, bg="lightblue").grid(row=12, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Job aktualisieren", command=update_selected_job, bg="khaki").grid(row=12, column=1, columnspan=3, pady=5)
+tk.Button(root, text="Job löschen", command=delete_selected_job, bg="salmon").grid(row=12, column=2, columnspan=3, pady=5)
+
+# SQL-Filter Eingabe
+tk.Label(root, text="SQL-Filter (WHERE-Bedingung):").grid(row=13, column=0, sticky="e")
+entry_sql_filter = tk.Entry(root, width=60)
+entry_sql_filter.grid(row=14, column=1, padx=5, pady=2, sticky="w")
+
+tk.Button(root, text="Filter anwenden", command=lambda: apply_sql_filter(entry_sql_filter.get())).grid(row=14, column=2, padx=5, pady=2)
+
+
+
 tk.Button(root, text="Gefilterte Daten als Markdown exportieren", command=export_markdown, bg="lightgrey").grid(row=15, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Spaltenbreiten speichern", command=save_current_column_widths).grid(row=16, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Datenbank exportieren (CSV)", command=export_database, bg="lightgrey").grid(row=17, column=0, columnspan=3, pady=5)
