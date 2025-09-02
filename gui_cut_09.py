@@ -472,7 +472,7 @@ def export_database_sql():
 
 
 
-# Export seleked Data
+# Export seleked Data as Markdown
 
 def export_selected_to_markdown():
     selected_items = tree.selection()
@@ -502,9 +502,19 @@ def export_selected_to_markdown():
                 f.write(f"**Step:** {step}\n\n")
             f.write(f"**Eingabe:** `{eingabe_datei}`  \n")
             f.write(f"**Ausgabe:** `{ausgabe_datei}`\n\n")
+
+            # Wenn Ausgabedatei ein Video ist → einbetten
+            if ausgabe_datei.lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm")):
+                f.write(
+                    f"<video loop controls width=\"800\" height=\"500\">\n"
+                    f"<source src=\"Video/{ausgabe_datei}\" type=\"video/mp4\">\n"
+                    f"</video>\n\n"
+                )
+
             f.write("---\n\n")
 
     messagebox.showinfo("Export abgeschlossen", f"Die ausgewählten Einträge wurden nach Markdown exportiert:\n{filepath}")
+
 
 
 def apply_sql_filter(filter_text):
@@ -536,6 +546,49 @@ def apply_sql_filter(filter_text):
     except sqlite3.Error as e:
         messagebox.showerror("SQL-Fehler", f"Fehler in der SQL-Abfrage:\n{e}")
 
+import shutil
+import os
+
+def copy_selected_files():
+    selected_items = tree.selection()
+    if not selected_items:
+        messagebox.showwarning("Keine Auswahl", "Bitte wählen Sie mindestens einen Eintrag in der Tabelle aus.")
+        return
+
+    # Zielverzeichnis auswählen
+    target_dir = filedialog.askdirectory(title="Zielverzeichnis auswählen")
+    if not target_dir:
+        return
+
+    copied = []
+    missing = []
+
+    for item in selected_items:
+        values = tree.item(item, "values")
+
+        # ich gehe davon aus: Eingabe-Datei = values[1], Ausgabe-Datei = values[3]
+        # du kannst das hier anpassen
+
+        file_name, extension = os.path.splitext(values[1])
+
+        source_file = values[2]+"/"+file_name+"/"+values[3]
+
+        print("Source File:" + source_file)
+
+        if os.path.isfile(source_file):
+            try:
+                shutil.copy(source_file, target_dir)
+                copied.append(source_file)
+            except Exception as e:
+                messagebox.showerror("Fehler beim Kopieren", f"{source_file}\n{e}")
+        else:
+            missing.append(source_file)
+
+    # Rückmeldung
+    msg = f"{len(copied)} Dateien kopiert nach:\n{target_dir}"
+    if missing:
+        msg += f"\n\nNicht gefunden:\n" + "\n".join(missing)
+    messagebox.showinfo("Kopieren abgeschlossen", msg)
 
 
 # --- GUI Setup ---
@@ -628,6 +681,7 @@ tk.Button(root, text="Spaltenbreiten speichern", command=save_current_column_wid
 tk.Button(root, text="Datenbank exportieren (CSV)", command=export_database, bg="lightgrey").grid(row=17, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Gesamte Datenbank als SQL exportieren", command=export_database_sql, bg="lightgrey").grid(row=18, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Selektierte exportieren (Markdown)", command=export_selected_to_markdown).grid(row=19, column=0, columnspan=3, pady=5)
+tk.Button(root, text="Dateien kopieren", command=copy_selected_files).grid(row=19, column=2, columnspan=3, pady=5)
 
 # Lade Gruppen und Historie
 load_groups()
