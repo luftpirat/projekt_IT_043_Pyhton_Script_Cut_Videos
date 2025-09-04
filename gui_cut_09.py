@@ -590,6 +590,37 @@ def copy_selected_files():
         msg += f"\n\nNicht gefunden:\n" + "\n".join(missing)
     messagebox.showinfo("Kopieren abgeschlossen", msg)
 
+def execute_sql_statement(sql):
+    if not sql:
+        messagebox.showwarning("Leere Eingabe", "Bitte ein SQL-Statement eingeben.")
+        return
+
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    try:
+        c.execute(sql)
+
+        # Prüfen ob SELECT → Ergebnisse anzeigen
+        if sql.strip().lower().startswith("select"):
+            rows = c.fetchall()
+
+            # Tabelle leeren
+            for row in tree.get_children():
+                tree.delete(row)
+
+            # Falls die Spaltenanzahl abweicht → Dummy-Spalten
+            for row in rows:
+                tree.insert("", "end", values=row)
+
+        else:
+            conn.commit()
+            messagebox.showinfo("SQL erfolgreich", "Das Statement wurde erfolgreich ausgeführt.")
+
+        conn.close()
+    except sqlite3.Error as e:
+        messagebox.showerror("SQL-Fehler", f"Fehler beim Ausführen:\n{e}")
+
+
 
 # --- GUI Setup ---
 init_db()
@@ -680,8 +711,17 @@ tk.Button(root, text="Gefilterte Daten als Markdown exportieren", command=export
 tk.Button(root, text="Spaltenbreiten speichern", command=save_current_column_widths).grid(row=16, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Datenbank exportieren (CSV)", command=export_database, bg="lightgrey").grid(row=17, column=0, columnspan=3, pady=5)
 tk.Button(root, text="Gesamte Datenbank als SQL exportieren", command=export_database_sql, bg="lightgrey").grid(row=18, column=0, columnspan=3, pady=5)
-tk.Button(root, text="Selektierte exportieren (Markdown)", command=export_selected_to_markdown).grid(row=19, column=0, columnspan=3, pady=5)
-tk.Button(root, text="Dateien kopieren", command=copy_selected_files).grid(row=19, column=2, columnspan=3, pady=5)
+tk.Button(root, text="Selektierte exportieren (Markdown)", command=export_selected_to_markdown).grid(row=18, column=1, columnspan=3, pady=5)
+tk.Button(root, text="Dateien kopieren", command=copy_selected_files).grid(row=18, column=3, columnspan=3, pady=5)
+
+
+# SQL-Befehl-Eingabe
+tk.Label(root, text="SQL Statement:").grid(row=19, column=0, sticky="ne")
+sql_text = tk.Text(root, height=4, width=80)
+sql_text.grid(row=19, column=1, padx=5, pady=5, sticky="w")
+
+tk.Button(root, text="SQL ausführen", command=lambda: execute_sql_statement(sql_text.get("1.0", "end").strip())).grid(row=19, column=2, padx=5, pady=5)
+
 
 # Lade Gruppen und Historie
 load_groups()
