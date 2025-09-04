@@ -194,6 +194,10 @@ def run_ffmpeg():
     ausgabe_path = unique_output_path(eingabe_dir, ausgabe_name)
     cmd = ["ffmpeg", "-i", eingabe_path, "-ss", start, "-to", ende, ausgabe_path]
 
+    # --- Debug-Ausgabe ---
+    print("FFmpeg-Befehl:", " ".join(cmd))  
+    messagebox.showinfo("FFmpeg-Kommando", " ".join(cmd))
+
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
         save_to_db(eingabe_file, eingabe_dir, os.path.basename(ausgabe_path), start, ende, beschreibung, gruppe, untergruppe)
