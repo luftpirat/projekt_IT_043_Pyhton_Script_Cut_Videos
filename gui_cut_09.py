@@ -139,6 +139,10 @@ def browse_input_file():
         entry_input_file.delete(0, tk.END)
         entry_input_file.insert(0, os.path.basename(filename))
 
+
+#
+# Was macht die Funktion? 
+#
 def unique_output_path(directory, filename):
     base, ext = os.path.splitext(filename)
     counter = 1
