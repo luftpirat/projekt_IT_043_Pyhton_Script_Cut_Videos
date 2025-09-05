@@ -8,6 +8,11 @@ from datetime import datetime
 import threading
 import json
 
+
+from file_utils import ensure_directory, get_filename_without_extension
+
+
+
 # Datenbank in der die Jobs gespeichert werden. 
 DB_FILE = "ffmpeg_jobs5.db"
 
@@ -187,11 +192,17 @@ def run_ffmpeg():
         return
 
     eingabe_path = os.path.join(eingabe_dir, eingabe_file)
-    if not os.path.exists(eingabe_path):
+    if not os.path.exists(eingabe_dir):
         messagebox.showerror("Fehler", "Eingabedatei existiert nicht!")
         return
 
-    ausgabe_path = unique_output_path(eingabe_dir, ausgabe_name)
+    #Ausgabe
+    eingabe_file_noex = get_filename_without_extension(eingabe_file)
+    ausgabe_dir = eingabe_dir+"/"+eingabe_file_noex
+    ensure_directory(ausgabe_dir)
+     
+    ausgabe_path = unique_output_path(ausgabe_dir, ausgabe_name)
+    print("Ausgabe Path:", ausgabe_path) 
     cmd = ["ffmpeg", "-i", eingabe_path, "-ss", start, "-to", ende, ausgabe_path]
 
     # --- Debug-Ausgabe ---
@@ -204,6 +215,7 @@ def run_ffmpeg():
         messagebox.showinfo("Erfolg", f"Video erfolgreich exportiert:\n{ausgabe_path}")
     except subprocess.CalledProcessError as e:
         messagebox.showerror("Fehler", f"FFmpeg-Fehler:\n{e.stderr}")
+        print(e.stderr)
 
 def run_ffmpeg_threaded():
     threading.Thread(target=run_ffmpeg, daemon=True).start()
