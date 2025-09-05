@@ -714,16 +714,21 @@ scrollbar.grid(row=11, column=3, sticky="ns")
 tree.bind("<Double-1>", load_selected_job)
 
 # Action Buttons
-tk.Button(root, text="Job erneut ausführen", command=rerun_selected_job, bg="lightblue").grid(row=12, column=0, columnspan=3, pady=5)
-tk.Button(root, text="Job aktualisieren", command=update_selected_job, bg="khaki").grid(row=12, column=1, columnspan=3, pady=5)
-tk.Button(root, text="Job löschen", command=delete_selected_job, bg="salmon").grid(row=12, column=2, columnspan=3, pady=5)
+#tk.Button(root, text="Job erneut ausführen", command=rerun_selected_job, bg="lightblue").grid(row=12, column=0, columnspan=3, pady=5)
+#tk.Button(root, text="Job aktualisieren", command=update_selected_job, bg="khaki").grid(row=12, column=1, columnspan=3, pady=5)
+#tk.Button(root, text="Job löschen", command=delete_selected_job, bg="salmon").grid(row=12, column=2, columnspan=3, pady=5)
+
+b11 = tk.Button(root, text="Job erneut ausführen", command=rerun_selected_job, bg="lightblue").grid(row=12, column=0,  padx=4, pady=4)
+b12 = tk.Button(root, text="Job aktualisieren", command=update_selected_job, bg="khaki").grid(row=12, column=1,  padx=4, pady=4)
+b13 = tk.Button(root, text="Job löschen", command=delete_selected_job, bg="salmon").grid(row=12, column=2,  padx=4, pady=4)
+
 
 # SQL-Filter Eingabe
-tk.Label(root, text="SQL-Filter (WHERE-Bedingung):").grid(row=13, column=0, sticky="e")
+tk.Label(root, text="SQL-Filter (WHERE-Bedingung):").grid(row=13, column=0, sticky="w")
 entry_sql_filter = tk.Entry(root, width=60)
-entry_sql_filter.grid(row=14, column=1, padx=5, pady=2, sticky="w")
+entry_sql_filter.grid(row=14, column=0, padx=5, pady=2, sticky="e")
 
-tk.Button(root, text="Filter anwenden", command=lambda: apply_sql_filter(entry_sql_filter.get())).grid(row=14, column=2, padx=5, pady=2)
+tk.Button(root, text="Filter anwenden", command=lambda: apply_sql_filter(entry_sql_filter.get())).grid(row=14, column=1, padx=5, pady=2)
 
 
 
